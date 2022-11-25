@@ -1,0 +1,70 @@
+const { getPessoa, setPessoa } = require("../database/cache.js");
+const Pessoa = require("../models/Pessoa");
+
+const salvarPessoa = async (req, res) => {
+  try {
+    const pessoa = Pessoa.build(req.body);
+    await pessoa.save();
+    res.status(201).send("Usuário criado");
+  } catch {
+    res.status(400).send("Falha ao salvar");
+  }
+};
+
+const listarPessoas = async (req, res) => {
+  const pessoas = await Pessoa.findAll();
+  res.status(200).send(pessoas);
+};
+
+const buscarPessoa = async (req, res) => {
+  const { id } = req.params;
+  const pessoaCache = await getPessoa(id);
+
+  if (pessoaCache) {
+    res.status(200).send(pessoaCache);
+  } else {
+    const pessoa = await Pessoa.findByPk(id);
+
+    if (pessoa === null) {
+      res.status(404).send("Usuário não encontrado");
+    } else {
+      const pessoaMapped = {
+        id: pessoa.id,
+        nome: pessoa.nome,
+        email: pessoa.email,
+      };
+
+      await setPessoa(pessoaMapped);
+      res.status(200).send(pessoaMapped);
+    }
+  }
+};
+
+const deletarPessoa = async (req, res) => {
+  const pessoa = await Pessoa.findByPk(req.params.id);
+  if (pessoa === null) {
+    res.status(404).send("Usuário não encontrado");
+  } else {
+    await pessoa.destroy();
+    res.status(200).send("Removido com sucesso");
+  }
+};
+
+const atualizarPessoa = async (req, res) => {
+  const pessoa = await Pessoa.findByPk(req.params.id);
+  if (pessoa === null) {
+    res.status(404).send("Usuário não encontrado");
+  } else {
+    pessoa.set(req.body);
+    await pessoa.save();
+    res.status(200).send("Atualizado com sucesso");
+  }
+};
+
+module.exports = {
+  salvarPessoa,
+  listarPessoas,
+  buscarPessoa,
+  deletarPessoa,
+  atualizarPessoa,
+};
